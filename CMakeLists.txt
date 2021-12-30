@@ -50,7 +50,7 @@ if (WIN32)
 					-DWINVER=0x0600
 					-DWIN32_LEAN_AND_MEAN)
 else ()
-	add_compile_options (-Werror=switch)
+	add_compile_options (-ggdb -Werror=switch)
 endif ()
 
 if (WIN32)

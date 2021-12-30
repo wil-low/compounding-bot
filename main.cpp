@@ -1,28 +1,36 @@
-#include <TrustWalletCore/TWCoinType.h>
-#include <TrustWalletCore/TWAnySigner.h>
-#include <TrustWalletCore/TWCoinTypeConfiguration.h>
-#include <TrustWalletCore/TWHDWallet.h>
-#include <TrustWalletCore/TWPrivateKey.h>
-#include <TrustWalletCore/TWString.h>
-
 #include <uint256.h>
 #include <HexCoding.h>
-#include <proto/Ethereum.pb.h>
-#include <TrustWalletCore/TWEthereumAbi.h>
-#include <TrustWalletCore/TWEthereumAbiFunction.h>
+
+#include <Ethereum/Transaction.h>
+#include <Ethereum/ABI/Function.h>
+#include <Ethereum/ABI/ParamAddress.h>
+#include <Ethereum/Signer.h>
 
 #include "binacpp/binacpp.h"
 
 #include <easylogging++.h>
 #include <jsoncpp/json/json.h>
+
 #include <iostream>
 #include <string>
+#include <boost/asio.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 INITIALIZE_EASYLOGGINGPP
 
+// testnet Compound
 const std::string URL = "https://data-seed-prebsc-1-s1.binance.org:8545/";
+const int chainID = 97;
+const std::string WALLET = "9777d3d77f4cc000ed6aa6979854178a28e04eb5";
+const std::string SECRET = "b7cf1604a1f1f57765ee9613ea5188ac077ab82155d87f749c86e39eaec53c15";
+const std::string CONTRACT = "cd5dc972dbc4df70f64871d87ae8f64d32988279";  // BNB token
+
+
 BinaCPP rest(URL);
 
+static const std::vector<std::string> headers {
+	"Content-Type: application/json"
+};
 
 std::string pretty_print(const Json::Value& val)
 {
@@ -31,16 +39,82 @@ std::string pretty_print(const Json::Value& val)
 	return Json::writeString(builder, val);
 }
 
-std::string eth_call(const std::string& from, const std::string& to, const std::string& data)
+Json::Value make_json_rpc(const std::string& method)
 {
-	static const std::vector<std::string> headers {
-		"Content-Type: application/json"
-	};
-
 	Json::Value doc;
-	doc["method"] = "eth_call";
+	doc["method"] = method;
 	doc["id"] = 1;
 	doc["jsonrpc"] = "2.0";
+	return doc;
+}
+
+Json::Value rest_request(Json::Value doc)
+{
+	std::string request = pretty_print(doc);
+
+	LOG(DEBUG) << "Request: " << request;
+
+	std::string str_result;
+	rest.curl_api_with_header(URL, str_result, headers, request, "POST");
+
+	LOG(DEBUG) << "Response: " << str_result;
+
+	Json::Reader reader;
+	Json::Value json_result;
+	reader.parse(str_result, json_result);
+
+	return json_result;
+}
+
+Json::Value eth_getTransactionCount(const std::string& address)
+{
+	auto doc = make_json_rpc("eth_getTransactionCount");
+
+	Json::Value arr = Json::arrayValue;
+	arr.append("0x" + address);
+	arr.append(Json::Value("latest"));
+	doc["params"] = arr;
+
+	return rest_request(doc);
+}
+
+Json::Value eth_gasPrice()
+{
+	auto doc = make_json_rpc("eth_gasPrice");
+
+	Json::Value arr = Json::arrayValue;
+	doc["params"] = arr;
+
+	return rest_request(doc);
+}
+
+Json::Value eth_estimateGas()
+{
+	auto doc = make_json_rpc("eth_estimateGas");
+
+	Json::Value params = Json::objectValue;
+	Json::Value arr = Json::arrayValue;
+	arr.append(params);
+	doc["params"] = arr;
+
+	return rest_request(doc);
+}
+
+Json::Value eth_getBalance(const std::string& address)
+{
+	auto doc = make_json_rpc("eth_getBalance");
+
+	Json::Value arr = Json::arrayValue;
+	arr.append("0x" + address);
+	arr.append(Json::Value("latest"));
+	doc["params"] = arr;
+
+	return rest_request(doc);
+}
+
+Json::Value eth_call(const std::string& from, const std::string& to, const std::string& data)
+{
+	auto doc = make_json_rpc("eth_call");
 
 	Json::Value params;
 	params["from"] = "0x" + from;
@@ -51,92 +125,119 @@ std::string eth_call(const std::string& from, const std::string& to, const std::
 	arr.append(Json::Value("latest"));
 	doc["params"] = arr;
 
-	std::string request = pretty_print(doc);
-
-	LOG(DEBUG) << "Request: " << request;
-
-	std::string str_result;
-	rest.curl_api_with_header(URL, str_result, headers, request, "POST");
-
-	LOG(DEBUG) << "Response: " << str_result;
-	return str_result;
+	return rest_request(doc);
 }
 
-int main(int argc, char* argv[])
+Json::Value eth_sendRawTransaction(const std::string& from, const std::string& to, const std::string& data)
 {
-	START_EASYLOGGINGPP(argc, argv);
-	LOG(INFO) << "My first info log using default logger";
+	auto doc = make_json_rpc("eth_sendRawTransaction");
+
+	Json::Value arr = Json::arrayValue;
+	arr.append("0x" + data);
+	doc["params"] = arr;
+
+	return rest_request(doc);
+}
+
+TW::uint256_t hexToUInt256(std::string s)
+{
+	if (s.length() % 2)
+		s.insert(s.begin() + 2, '0');
+	TW::Ethereum::ABI::ParamUInt256 result;
+	result.setValueJson(s);
+	return result.getVal();
+}
+
+TW::uint256_t nonce256 = 0;
+auto toAddress = TW::parse_hex(CONTRACT);
+
+std::string prepare_transaction()
+{
 	try {
 
-		const std::string WALLET = "9777d3d77f4cc000ed6aa6979854178a28e04eb5";
-		const std::string SECRET = "b7cf1604a1f1f57765ee9613ea5188ac077ab82155d87f749c86e39eaec53c15";
-		const std::string CONTRACT = "cd5dc972dbc4df70f64871d87ae8f64d32988279";
+		auto fromAddress = TW::parse_hex(WALLET);
 
-		rest.init("", "");
+		auto approveFunc = TW::Ethereum::ABI::Function("approve", std::vector<std::shared_ptr<TW::Ethereum::ABI::ParamBase>>{
+			std::make_shared<TW::Ethereum::ABI::ParamAddress>(fromAddress),
+			std::make_shared<TW::Ethereum::ABI::ParamUInt256>(0)
+		});
+		auto approveSig = TW::hex(approveFunc.getSignature());
 
-		auto funSymbol = TWEthereumAbiEncode(TWEthereumAbiFunctionCreateWithString(TWStringCreateWithUTF8Bytes("symbol")));
-		auto s = TWStringCreateWithHexData(funSymbol);
-		std::string data = TWStringUTF8Bytes(s);
+		auto response = eth_getTransactionCount(WALLET);
+		nonce256 = hexToUInt256(response["result"].asString());
 
-		auto response = eth_call(WALLET, CONTRACT, data);
+		response = eth_gasPrice();
+		auto gasPrice256 = hexToUInt256(response["result"].asString());
 
+		response = eth_estimateGas();
+		auto gasLimit256 = hexToUInt256(response["result"].asString());
 
-		auto chainId = TW::store(TW::uint256_t(1));
-		auto nonce = TW::store(TW::uint256_t(0));
-		auto gasPrice = TW::store(TW::uint256_t(42000000000)); // 0x09c7652400
-		auto gasLimit = TW::store(TW::uint256_t(78009)); // 130B9
-		auto toAddress = "0x5322b34c88ed0691971bf52a7047448f0f4efc84";
-		auto token = "0x6b175474e89094c44da98b954eedeac495271d0f"; // DAI
-		auto amount = TW::uint256_t(0000000000000000000);
-		auto amountData = TW::store(amount);
-		auto key = TW::parse_hex("0x608dcb1742bb3fb7aec002074e3420e4fab7d00cced79ccdac53ed5b27138151");
+		LOG(DEBUG) << "nonce = " << nonce256
+					<< ", gasPrice = " << gasPrice256
+					<< ", gasLimit = " << gasLimit256;
 
-		//TW::Ethereum::Proto::Transaction_ContractGeneric input;
-		//input.set_amount(amountData.data(), amountData.size());
-		//input.set_data()  (funSymbol, funSymbol);
+		//response = eth_call(WALLET, CONTRACT, approveSig);
+		//response = eth_getBalance(WALLET);
 
+		auto privateKey = TW::PrivateKey(TW::parse_hex(SECRET));
 
+		TW::Data payload;
+		approveFunc.encode(payload);
 
-		// Steps for sending:
-		// 1. put together a send message (contains sender and receiver address, amount, gas price, etc.)
-		// 2. sign this message
-		// 3. broadcast this message to the P2P network -- not done in this sample
-		// Note that Signer input and output are represented as protobuf binary messages, for which support is missing in C++.
-		// Therefore some direct serialization/parsing is done in helper methods.
-		
-		/*std::cout << "SEND funds:" << std::endl;
-		const std::string dummyReceiverAddress = "0xC37054b3b48C3317082E7ba872d7753D13da4986";
-		auto secretPrivKey = TWPrivateKeyData(secretPrivateKeyDefault);
+		auto transaction = std::make_shared<TW::Ethereum::TransactionNonTyped>(nonce256, gasPrice256, gasLimit256, toAddress, 0, payload);
+	
+		auto signature = TW::Ethereum::Signer::sign(privateKey, chainID, transaction);
 
-		std::cout << "preparing transaction (using AnySigner) ... ";
-		std::string chainIdB64 = base64(parse_hex("01"))
-		std::string gasPriceB64 = "1pOkAA==";   // base64(parse_hex("d693a4")) decimal 3600000000
-		std::string gasLimitB64 = "Ugg=";	   // base64(parse_hex("5208")) decimal 21000
-		std::string amountB64 = "A0i8paFgAA=="; // base64(parse_hex("0348bca5a160"))  924400000000000
-		std::string transaction = "{"
-			"\"chainId\":\"" + chainIdB64 +
-			"\",\"gasPrice\":\"" + gasPriceB64 +
-			"\",\"gasLimit\":\"" + gasLimitB64 +
-			"\",\"toAddress\":\"" + dummyReceiverAddress +
-			"\",\"transaction\":{\"transfer\":{\"amount\":\"" + amountB64 +
-			"\"}}}";			
-		std::cout << "transaction: " << transaction << std::endl;
+    	auto encoded = transaction->encoded(signature, chainID);
 
-		std::cout << "signing transaction ... ";
+		auto data = TW::hex(encoded);
 
-		auto json = TWStringCreateWithUTF8Bytes(transaction.c_str());
-		auto result = TWAnySignerSignJSON(json, secretPrivKey, TWCoinTypeEthereum);
-		auto signedTransaction = std::string(TWStringUTF8Bytes(result));
-		std::cout << "done" << std::endl;
-		std::cout << "Signed transaction data (to be broadcast to network):  (len " << signedTransaction.length() << ") '" << signedTransaction << "'" << std::endl;
-		// see e.g. https://github.com/flightwallet/decode-eth-tx for checking binary output content
-		std::cout << std::endl;
-		TWStringDelete(json);
-		TWStringDelete(result);*/
-		std::cout << "Bye!" << std::endl;
+		//response = eth_call(WALLET, CONTRACT, data);
+		response = eth_sendRawTransaction(WALLET, CONTRACT, data);
+
+		return data;
 	}
 	catch (const std::exception& ex) {
 		std::cout << "exception: " << ex.what() << std::endl;
 		throw ex;
 	}
+	return "";
+}
+
+boost::asio::io_service io;
+boost::posix_time::seconds interval(10);
+auto start = boost::posix_time::from_time_t(1640906520);
+boost::asio::deadline_timer timer(io, start);
+
+int counter = 5;
+
+void timer_cb(const boost::system::error_code& /*e*/)
+{
+	LOG(DEBUG) << "Hello, world!";
+	
+	--counter;
+
+	if (counter > 0) {
+		timer.expires_at(timer.expires_at() + interval);
+		// Posts the timer event
+		timer.async_wait(timer_cb);
+	}
+}
+
+int main(int argc, char* argv[])
+{
+	START_EASYLOGGINGPP(argc, argv);
+	el::Configurations defaultConf;
+	defaultConf.setToDefault();
+	defaultConf.setGlobally(el::ConfigurationType::Format, "%datetime | %msg");
+	el::Loggers::reconfigureLogger("default", defaultConf);
+
+	rest.init("", "");
+
+	auto data = prepare_transaction();
+
+	timer.async_wait(timer_cb);
+	io.run();
+
+	return 0;
 }
