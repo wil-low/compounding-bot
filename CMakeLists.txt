@@ -14,6 +14,8 @@ if (NOT WALLET_CORE)
     #message (FATAL_ERROR "${SETUP_MESSAGE}")
 endif ()
 
+set (EASYLOGGING "../easyloggingpp")
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -25,6 +27,7 @@ set (CMAKE_C_STANDARD_REQUIRED ON)
 # ${WALLET_CORE}/src -- internal TrustWalletCore files, for signer protobuf messages
 # ${WALLET_CORE}/build/local/include) -- for protobuf includes
 include_directories (${CMAKE_SOURCE_DIR} ${WALLET_CORE}/include ${WALLET_CORE}/src ${WALLET_CORE}/build/local/include)
+include_directories (${EASYLOGGING}/src)
 link_directories (${WALLET_CORE}/build ${WALLET_CORE}/build/trezor-crypto ${WALLET_CORE}/build/local/lib)
 
 find_library(WALLET_CORE_LIB_FILE TrustWalletCore PATH ${WALLET_CORE}/build)
@@ -90,7 +93,11 @@ if(CLANG_ASAN)
 endif()
 
 # sources of this exec
-add_executable (compounding-bot main.cpp)
+add_executable (compounding-bot 
+	main.cpp
+	binacpp/binacpp.cpp
+	${EASYLOGGING}/src/easylogging++.cc
+)
 
 # link with our library, and default platform libraries
-target_link_libraries (compounding-bot TrustWalletCore TrezorCrypto protobuf pthread ${PLATFORM_LIBS})
+target_link_libraries (compounding-bot TrustWalletCore TrezorCrypto protobuf curl jsoncpp pthread ${PLATFORM_LIBS})

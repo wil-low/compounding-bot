@@ -52,14 +52,15 @@ my %ETH_CALLS = (
 	symbol => meth_sig('symbol()'),
 	approve => meth_sig('approve()'),
 	allowance => meth_sig('allowance(address,address)'),
+	getGuys => meth_sig('getGuys())'),
 );
 
 #die hex('0000000000000000000000000000000000000000000000000000000061c9a37e');
 
-#my $content = eth_call('allowance', [$WALLET, $WALLET]);
+my $content = eth_call('symbol', [$WALLET, $WALLET]);
 #my $content = eth_call('approve', [$WALLET, '1']);
 #my $content = eth_signed_transaction('approve', [$WALLET, '1']);
-my $content = eth_sendTransaction('approve', [$WALLET, '1']);
+#my $content = eth_sendTransaction('approve', [$WALLET, '1']);
 
 print "Request content:\n$content\n";
 

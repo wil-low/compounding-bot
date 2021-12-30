@@ -1,12 +1,12 @@
 {
     "tasks": [
         {
-            "type": "cppbuild",
-            "label": "C/C++: clang++ build project",
-            "command": "make",
+            "type": "shell",
+            "label": "CMake Build",
+            "command": "cmake --build ${workspaceFolder}",
             "args": [],
             "options": {
-                "cwd": "${fileDirname}"
+                "cwd": "${workspaceFolder}"
             },
             "problemMatcher": [
                 "$gcc"

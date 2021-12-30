@@ -4,14 +4,15 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        
         {
-            "name": "make - Build and debug active file",
+            "name": "Run bot",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${fileDirname}/compounding-bot",
+            "program": "${workspaceFolder}/compounding-bot",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${fileDirname}",
+            "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
@@ -22,7 +23,7 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "C/C++: clang++ build project",
+            "preLaunchTask": "CMake Build",
             "miDebuggerPath": "/usr/bin/gdb"
         }
     ]
