@@ -31,6 +31,7 @@
 *.out
 *.app
 compounding-bot
+bot.keystore
 
 .cmake
 CMakeLists.txt.user

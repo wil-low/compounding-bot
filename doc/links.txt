@@ -3,3 +3,11 @@ https://bscscan.com/address/0xf35848441017917a034589bfbec4b3783bb39cb2#writeProx
 https://bscscan.com/token/0x5ca42204cdaa70d5c773946e69de942b85ca6706?a=0xddc6d07ec7df9654e74aeffc159a09142f4ab8eb
 
 
+0xc1742a30b7469f49f37239b1c2905876821700e8
+Nearest compounding time 1640988750 uint256  субота, 1 січня 2022 р., 00:12:30
+POSI_BNB_PID = 2
+
+0xf35848441017917a034589bfbec4b3783bb39cb2
+Nearest compounding time 1640982550 uint256  п’ятниця, 31 грудня 2021 р., 22:29:10
+POSI_BUSD_PID = 0
+

@@ -101,4 +101,4 @@ add_executable (compounding-bot
 )
 
 # link with our library, and default platform libraries
-target_link_libraries (compounding-bot TrustWalletCore TrezorCrypto protobuf curl jsoncpp pthread ${PLATFORM_LIBS})
+target_link_libraries (compounding-bot TrustWalletCore TrezorCrypto protobuf curl crypto jsoncpp pthread ${PLATFORM_LIBS})
