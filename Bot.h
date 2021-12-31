@@ -5,9 +5,12 @@
 #include <boost/asio.hpp>
 
 #include <uint256.h>
-#include <PrivateKey.h>
 
 class BinaCPP;
+
+namespace TW {
+	class PrivateKey;
+}
 
 class Bot
 {
@@ -15,6 +18,7 @@ public:
 	Bot(Json::Value& config, boost::asio::io_service& io);
 	~Bot();
 
+	void init();
 	void start();
 
 	static std::string pretty_print(const Json::Value& val, bool indent = false);
@@ -26,6 +30,9 @@ public:
 
 private:
 	static const std::vector<std::string> headers_;
+
+	void check_config(const std::string& tag, std::string& output);
+	void check_config(const std::string& tag, int& output);
 
 	void prepare_transaction();
 	Json::Value rest_request(Json::Value doc);
@@ -40,6 +47,8 @@ private:
 	BinaCPP* rest_;
 
 	Json::Value config_;
+
+	std::string mode_;
 	std::string url_;
 	int chain_id_;
 
@@ -56,7 +65,8 @@ private:
 
 	std::string wallet_hex_;
 	TW::Data wallet_;
-	TW::PrivateKey private_key_;
+	TW::PrivateKey* private_key_;
 
 	boost::asio::deadline_timer compound_timer_;
+	boost::posix_time::milliseconds delta_msec_;
 };

@@ -1,8 +1,12 @@
 {
+	"id": 1,
 	"name": "Position Exchange BNB vault",
-	"url": "",
-	"chain_id": 0,
+	"mode": "compound",
+	"url": "https://bsc-dataseed.binance.org/",
+	"chain_id": 56,
 	"contract": "",
 	"wallet": "",
-	"secret": ""
+	"secret": "",
+	"start_time": 1640952060,
+	"delta_msec": -60
 }

@@ -1,5 +1,4 @@
 #include "Bot.h"
-//#include "binacpp/binacpp.h"
 
 #include <easylogging++.h>
 
@@ -41,10 +40,9 @@ int main(int argc, char* argv[])
 
 		Bot bot(cfg, io);
 
+		bot.init();
 		bot.start();
-		//auto data = prepare_transaction();
 
-		//timer.async_wait(timer_cb);
 		io.run();
 	}
 	else {
