@@ -12,6 +12,7 @@
             "program": "${workspaceFolder}/compounding-bot",
             "args": [
 				"cfg/BNB_testnet.json"
+				//"cfg/BNB_vault.json"
 			],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

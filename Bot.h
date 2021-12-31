@@ -10,6 +10,11 @@ class BinaCPP;
 
 namespace TW {
 	class PrivateKey;
+	namespace Ethereum {
+		namespace ABI {
+			class Function;
+		}
+	}
 }
 
 class Bot
@@ -26,7 +31,7 @@ public:
 	static Json::Value make_json_rpc(const std::string& method);
 	static TW::uint256_t hexToUInt256(std::string s);
 
-	void compound_timer_cb(const boost::system::error_code& /*e*/);
+	void timer_cb(const boost::system::error_code& /*e*/);
 
 private:
 	static const std::vector<std::string> headers_;
@@ -34,7 +39,7 @@ private:
 	void check_config(const std::string& tag, std::string& output);
 	void check_config(const std::string& tag, int& output);
 
-	void prepare_transaction();
+	void prepare_transaction(TW::Ethereum::ABI::Function* func);
 	Json::Value rest_request(Json::Value doc);
 
 	Json::Value eth_getTransactionCount(const std::string& address);
@@ -43,6 +48,11 @@ private:
 	Json::Value eth_getBalance(const std::string& address);
 	Json::Value eth_call(const std::string& from, const std::string& to, const std::string& data);
 	Json::Value eth_sendRawTransaction(const std::string& data);
+
+	void schedule_for_approve();
+	void schedule_for_compound_time();
+
+	void log_schedule();
 
 	BinaCPP* rest_;
 
@@ -61,12 +71,18 @@ private:
 	std::string prepared_tx_;
 	std::string last_tx_hash_;
 
+	std::string contract_hex_;
 	TW::Data contract_;
 
 	std::string wallet_hex_;
 	TW::Data wallet_;
+
 	TW::PrivateKey* private_key_;
 
-	boost::asio::deadline_timer compound_timer_;
+	TW::Ethereum::ABI::Function *approve_func_;
+	TW::Ethereum::ABI::Function *compound_func_;
+	TW::Ethereum::ABI::Function *nearestCompoundingTime_func_;
+
+	boost::asio::deadline_timer main_timer_;
 	boost::posix_time::milliseconds delta_msec_;
 };

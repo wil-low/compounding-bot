@@ -15,7 +15,7 @@
 INITIALIZE_EASYLOGGINGPP
 
 const TWCoinType coin_type = TWCoinType::TWCoinTypeEthereum;
-const int PASSWORD_LEN = 128;
+const int PASSWORD_LEN = 100;
 
 boost::asio::io_service io;
 
@@ -70,7 +70,9 @@ int main(int argc, char* argv[])
 				auto privateKey = load_wallet("bot.keystore", password);
 
 				cfg["secret"] = TW::hex(privateKey.bytes);
-				cfg["wallet"] = TW::deriveAddress(coin_type, privateKey);
+				cfg["wallet"] = TW::deriveAddress(coin_type, privateKey).substr(2);
+				//LOG(INFO) << cfg["secret"].asString();
+				//LOG(INFO) << cfg["wallet"].asString();
 			}
 
 			Bot bot(cfg, io);
@@ -87,10 +89,10 @@ int main(int argc, char* argv[])
 		LOG(INFO) << "compounding-bot finished\n\n";
 	}
 	catch (TW::Keystore::DecryptionError&) {
-		LOG(ERROR) << "Caught DecryptionError";
+		LOG(ERROR) << "DecryptionError";
 	}
 	catch (std::exception& e) {
-		LOG(ERROR) << "Caught exception: " << e.what();
+		LOG(ERROR) << "Exception: " << e.what();
 	}
 	return 0;
 }
