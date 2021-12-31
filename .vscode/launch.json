@@ -10,7 +10,9 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/compounding-bot",
-            "args": [],
+            "args": [
+				"cfg/BNB_testnet.json"
+			],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

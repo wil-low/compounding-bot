@@ -64,11 +64,12 @@ int BinaCPP::curl_api_with_header(const std::string &url, std::string &str_resul
 		curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYPEER, false);
 		curl_easy_setopt(curl_, CURLOPT_ENCODING, "gzip");
 		curl_easy_setopt(curl_, CURLOPT_FOLLOWLOCATION, 1);
+		curl_easy_setopt(curl_, CURLOPT_TCP_NODELAY, 1);
 
 		struct curl_slist *chunk = nullptr;
-		if ( extra_http_header.size() > 0 ) {
-			for (int i = 0; i < extra_http_header.size(); i++) {
-				chunk = curl_slist_append(chunk, extra_http_header[i].c_str() );
+		if (!extra_http_header.empty()) {
+			for (auto& h : extra_http_header) {
+				chunk = curl_slist_append(chunk, h.c_str());
 			}
 			curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, chunk);
 		}
@@ -79,7 +80,7 @@ int BinaCPP::curl_api_with_header(const std::string &url, std::string &str_resul
 
 		res = curl_easy_perform(curl_);
 
-		if (extra_http_header.size() > 0) {
+		if (!extra_http_header.empty()) {
 			curl_slist_free_all(chunk);
 		}
 

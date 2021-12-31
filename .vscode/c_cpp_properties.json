@@ -5,7 +5,8 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "../wallet-core/include",
-                "../easyloggingpp/src"
+                "../easyloggingpp/src",
+                "../wallet-core/src"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/clang",

@@ -1,0 +1,10 @@
+{
+	"id": 0,
+	"name": "BNB token contract - testnet (Compromised)",
+	"url": "https://data-seed-prebsc-1-s1.binance.org:8545/",
+	"chain_id": 97,
+	"contract": "cd5dc972dbc4df70f64871d87ae8f64d32988279",
+	"wallet": "9777d3d77f4cc000ed6aa6979854178a28e04eb5",
+	"secret": "b7cf1604a1f1f57765ee9613ea5188ac077ab82155d87f749c86e39eaec53c15",
+	"start_time": 1640946660
+}

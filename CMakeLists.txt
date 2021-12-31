@@ -95,6 +95,7 @@ endif()
 # sources of this exec
 add_executable (compounding-bot 
 	main.cpp
+	Bot.cpp
 	binacpp/binacpp.cpp
 	${EASYLOGGING}/src/easylogging++.cc
 )
