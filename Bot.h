@@ -32,6 +32,7 @@ public:
 	static TW::uint256_t hexToUInt256(std::string s);
 
 	void timer_cb(const boost::system::error_code& /*e*/);
+	void cooldown_cb(const boost::system::error_code& /*e*/);  // after bounty
 
 private:
 	static const std::vector<std::string> headers_;

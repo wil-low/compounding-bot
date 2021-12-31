@@ -263,6 +263,7 @@ void Bot::schedule_for_10x1min()
 
 	main_timer_.expires_at(start + delta_msec_);
 	main_timer_.async_wait(std::bind(&Bot::timer_cb, this, std::placeholders::_1));
+	log_schedule();
 }
 
 void Bot::schedule_for_compound_time()
@@ -271,9 +272,18 @@ void Bot::schedule_for_compound_time()
 	auto next = hexToUInt256(response["result"].asString());
 	LOG(DEBUG) << "next = " << next;
 
-	auto start = boost::posix_time::from_time_t((time_t)next);
-	main_timer_.expires_at(start + delta_msec_);
-	main_timer_.async_wait(std::bind(&Bot::timer_cb, this, std::placeholders::_1));
+	if (nearest_compounding_time_ != next) {
+		nearest_compounding_time_ = next;
+		auto start = boost::posix_time::from_time_t((time_t)next);
+		main_timer_.expires_at(start + delta_msec_);
+		main_timer_.async_wait(std::bind(&Bot::timer_cb, this, std::placeholders::_1));
+	}
+	else {
+		// reschedule for 20 sec after bounty distribution
+		main_timer_.expires_at(boost::posix_time::second_clock::universal_time() + boost::posix_time::seconds(20));
+		main_timer_.async_wait(std::bind(&Bot::cooldown_cb, this, std::placeholders::_1));
+	}
+	log_schedule();
 }
 
 void Bot::log_schedule()
@@ -324,7 +334,14 @@ void Bot::timer_cb(const boost::system::error_code& /*e*/)
 
 		prepare_transaction(compound_func_);
 		schedule_for_compound_time();
-		log_schedule();
+	}
+}
+
+void Bot::cooldown_cb(const boost::system::error_code& /*e*/)
+{
+	if (mode_ == MODE_compound) {
+		LOG(DEBUG) << "cooldown_cb compound";
+		schedule_for_compound_time();
 	}
 }
 
@@ -335,17 +352,14 @@ void Bot::start()
 	if (mode_ == MODE_approve10x1min) {
 		prepare_transaction(approve_func_);
 		schedule_for_10x1min();
-		log_schedule();
 	}
 	else if (mode_ == MODE_compound10x1min) {
 		prepare_transaction(compound_func_);
 		schedule_for_10x1min();
-		log_schedule();
 	}
 	else if (mode_ == MODE_compound) {
 		prepare_transaction(compound_func_);
 		schedule_for_compound_time();
-		log_schedule();
 	}
 	else {
 		throw std::logic_error("Unknown mode: " + mode_);
