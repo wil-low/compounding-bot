@@ -49,7 +49,7 @@ private:
 	Json::Value eth_call(const std::string& from, const std::string& to, const std::string& data);
 	Json::Value eth_sendRawTransaction(const std::string& data);
 
-	void schedule_for_approve();
+	void schedule_for_10x1min();
 	void schedule_for_compound_time();
 
 	void log_schedule();

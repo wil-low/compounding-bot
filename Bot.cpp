@@ -14,6 +14,7 @@
 
 
 const char MODE_approve10x1min[] = "approve10x1min";
+const char MODE_compound10x1min[] = "compound10x1min";
 const char MODE_compound[] = "compound";
 
 const std::vector<std::string> Bot::headers_ {
@@ -236,6 +237,8 @@ void Bot::prepare_transaction(TW::Ethereum::ABI::Function* func)
 	response = eth_estimateGas();
 	gas_limit_ = hexToUInt256(response["result"].asString());
 
+	gas_limit_ *= 2;
+
 	LOG(DEBUG) << "nonce = " << nonce_
 				<< ", gas_price = " << gas_price_
 				<< ", gas_limit = " << gas_limit_;
@@ -250,7 +253,7 @@ void Bot::prepare_transaction(TW::Ethereum::ABI::Function* func)
 	//response = eth_sendRawTransaction(prepared_tx_);
 }
 
-void Bot::schedule_for_approve()
+void Bot::schedule_for_10x1min()
 {
 	auto start = boost::posix_time::from_time_t(config_["start_time"].asInt64());
 	start += delta_msec_;
@@ -297,6 +300,23 @@ void Bot::timer_cb(const boost::system::error_code& /*e*/)
 			log_schedule();
 		}
 	}
+	else if (mode_ == MODE_compound10x1min) {
+		static int counter = 10;
+		static const boost::posix_time::minutes interval(1);
+
+		LOG(DEBUG) << "timer_cb compound #" << counter << " start";
+		auto response = eth_sendRawTransaction(prepared_tx_);
+		LOG(DEBUG) << "timer_cb compound #" << counter << " end";
+
+		--counter;
+
+		if (counter > 0) {
+			prepare_transaction(compound_func_);
+			main_timer_.expires_at(main_timer_.expires_at() + interval);
+			main_timer_.async_wait(std::bind(&Bot::timer_cb, this, std::placeholders::_1));
+			log_schedule();
+		}
+	}
 	else if (mode_ == MODE_compound) {
 		LOG(DEBUG) << "timer_cb compound start";
 		auto response = eth_sendRawTransaction(prepared_tx_);
@@ -314,7 +334,12 @@ void Bot::start()
 
 	if (mode_ == MODE_approve10x1min) {
 		prepare_transaction(approve_func_);
-		schedule_for_approve();
+		schedule_for_10x1min();
+		log_schedule();
+	}
+	else if (mode_ == MODE_compound10x1min) {
+		prepare_transaction(compound_func_);
+		schedule_for_10x1min();
 		log_schedule();
 	}
 	else if (mode_ == MODE_compound) {
