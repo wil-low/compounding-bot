@@ -19,7 +19,7 @@ const int PASSWORD_LEN = 100;
 
 boost::asio::io_service io;
 
-Json::Value load_config(const std::string& fn)
+nlohmann::json load_config(const std::string& fn)
 {
 	std::ifstream in(fn);
 	if (!in) {
@@ -62,9 +62,9 @@ int main(int argc, char* argv[])
 		LOG(INFO) << "compounding-bot started";
 
 		if (argc > 1) {
-			Json::Value cfg = load_config(argv[1]);
+			nlohmann::json cfg = load_config(argv[1]);
 
-			bool keys_present = cfg["secret"].isString() && !cfg["secret"].asString().empty() && cfg["wallet"].isString() && !cfg["wallet"].asString().empty();
+			bool keys_present = cfg["secret"].is_string() && !cfg["secret"].empty() && cfg["wallet"].is_string() && !cfg["wallet"].empty();
 			if (!keys_present) {
 				auto password = getpass("Enter password for keystore: ");
 				auto privateKey = load_wallet("bot.keystore", password);

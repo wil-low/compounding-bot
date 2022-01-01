@@ -21,7 +21,7 @@ const std::vector<std::string> Bot::headers_ {
 	"Content-Type: application/json"
 };
 
-Bot::Bot(Json::Value& config, boost::asio::io_service& io)
+Bot::Bot(nlohmann::json& config, boost::asio::io_service& io)
 : config_(config)
 , rest_(nullptr)
 , nonce_(0)
@@ -45,21 +45,21 @@ Bot::~Bot()
 	delete compound_func_;
 	delete nearestCompoundingTime_func_;
 
-	LOG(DEBUG) << "Deleted Bot #" << config_["id"].asInt();
+	LOG(DEBUG) << "Deleted Bot #" << config_["id"];
 }
 
 void Bot::check_config(const std::string& tag, std::string& output)
 {
-	if (config_[tag].isString() && !config_[tag].asString().empty())
-		output = config_[tag].asString();
+	if (config_[tag].is_string() && !config_[tag].empty())
+		output = config_[tag];
 	else
 		throw std::invalid_argument("check_config: string tag '" + tag + "' not found");
 }
 
 void Bot::check_config(const std::string& tag, int& output)
 {
-	if (config_[tag].isInt())
-		output = config_[tag].asInt();
+	if (config_[tag].is_number())
+		output = config_[tag];
 	else
 		throw std::invalid_argument("check_config: int tag '" + tag + "' not found");
 }
@@ -99,32 +99,30 @@ void Bot::init()
 	nearestCompoundingTime_func_ = new TW::Ethereum::ABI::Function("nearestCompoundingTime");
 
 	auto response = eth_getTransactionCount(wallet_hex_);
-	nonce_ = hexToUInt256(response["result"].asString());
+	nonce_ = hexToUInt256(response["result"]);
 
 	LOG(DEBUG) << "nonce = " << nonce_;
 }
 
-std::string Bot::pretty_print(const Json::Value& val, bool indent)
+std::string Bot::pretty_print(const nlohmann::json& val, bool indent)
 {
-	Json::StreamWriterBuilder builder;
-	if (!indent)
-		builder.settings_["indentation"] = "";
-	return Json::writeString(builder, val);
+	if (indent)
+		return val.dump(4);
+	return val.dump();
 }
 
-Json::Value Bot::parse_json(const std::string& str_result)
+nlohmann::json Bot::parse_json(const std::string& str_result)
 {
-	Json::Reader reader;
-	Json::Value json_result;
-	if (!reader.parse(str_result, json_result)) {
+	auto json_result = nlohmann::json::parse(str_result);
+	if (json_result.is_discarded()) {
 		throw std::logic_error("Parse error: " + str_result);
 	}
 	return json_result;
 }
 
-Json::Value Bot::make_json_rpc(const std::string& method)
+nlohmann::json Bot::make_json_rpc(const std::string& method)
 {
-	Json::Value doc;
+	nlohmann::json doc;
 	doc["method"] = method;
 	doc["id"] = 1;
 	doc["jsonrpc"] = "2.0";
@@ -140,7 +138,7 @@ TW::uint256_t Bot::hexToUInt256(std::string s)
 	return result.getVal();
 }
 
-Json::Value Bot::rest_request(Json::Value doc)
+nlohmann::json Bot::rest_request(nlohmann::json doc)
 {
 	std::string request = pretty_print(doc);
 
@@ -154,74 +152,74 @@ Json::Value Bot::rest_request(Json::Value doc)
 	return parse_json(str_result);
 }
 
-Json::Value Bot::eth_getTransactionCount(const std::string& address)
+nlohmann::json Bot::eth_getTransactionCount(const std::string& address)
 {
 	auto doc = make_json_rpc("eth_getTransactionCount");
 
-	Json::Value arr = Json::arrayValue;
-	arr.append("0x" + address);
-	arr.append(Json::Value("latest"));
+	auto arr = nlohmann::json::array();
+	arr.push_back("0x" + address);
+	arr.push_back(nlohmann::json("latest"));
 	doc["params"] = arr;
 
 	return rest_request(doc);
 }
 
-Json::Value Bot::eth_gasPrice()
+nlohmann::json Bot::eth_gasPrice()
 {
 	auto doc = make_json_rpc("eth_gasPrice");
 
-	Json::Value arr = Json::arrayValue;
+	auto arr = nlohmann::json::array();
 	doc["params"] = arr;
 
 	return rest_request(doc);
 }
 
-Json::Value Bot::eth_estimateGas()
+nlohmann::json Bot::eth_estimateGas()
 {
 	auto doc = make_json_rpc("eth_estimateGas");
 
-	Json::Value params = Json::objectValue;
-	Json::Value arr = Json::arrayValue;
-	arr.append(params);
+	auto params = nlohmann::json::object();
+	auto arr = nlohmann::json::array();
+	arr.push_back(params);
 	doc["params"] = arr;
 
 	return rest_request(doc);
 }
 
-Json::Value Bot::eth_getBalance(const std::string& address)
+nlohmann::json Bot::eth_getBalance(const std::string& address)
 {
 	auto doc = make_json_rpc("eth_getBalance");
 
-	Json::Value arr = Json::arrayValue;
-	arr.append("0x" + address);
-	arr.append(Json::Value("latest"));
+	auto arr = nlohmann::json::array();
+	arr.push_back("0x" + address);
+	arr.push_back(nlohmann::json("latest"));
 	doc["params"] = arr;
 
 	return rest_request(doc);
 }
 
-Json::Value Bot::eth_call(const std::string& from, const std::string& to, const std::string& data)
+nlohmann::json Bot::eth_call(const std::string& from, const std::string& to, const std::string& data)
 {
 	auto doc = make_json_rpc("eth_call");
 
-	Json::Value params;
+	nlohmann::json params;
 	params["from"] = "0x" + from;
 	params["to"] = "0x" + to;
 	params["data"] = "0x" + data;
-	Json::Value arr = Json::arrayValue;
-	arr.append(params);
-	arr.append(Json::Value("latest"));
+	nlohmann::json arr = nlohmann::json::array();
+	arr.push_back(params);
+	arr.push_back(nlohmann::json("latest"));
 	doc["params"] = arr;
 
 	return rest_request(doc);
 }
 
-Json::Value Bot::eth_sendRawTransaction(const std::string& data)
+nlohmann::json Bot::eth_sendRawTransaction(const std::string& data)
 {
 	auto doc = make_json_rpc("eth_sendRawTransaction");
 
-	Json::Value arr = Json::arrayValue;
-	arr.append("0x" + data);
+	auto arr = nlohmann::json::array();
+	arr.push_back("0x" + data);
 	doc["params"] = arr;
 
 	return rest_request(doc);
@@ -232,11 +230,11 @@ void Bot::prepare_transaction(TW::Ethereum::ABI::Function* func)
 	auto sig = TW::hex(func->getSignature());
 
 	auto response = eth_gasPrice();
-	gas_price_ = hexToUInt256(response["result"].asString());
+	gas_price_ = hexToUInt256(response["result"]);
 	gas_price_ *= 10;
 
 	response = eth_estimateGas();
-	gas_limit_ = hexToUInt256(response["result"].asString());
+	gas_limit_ = hexToUInt256(response["result"]);
 	gas_limit_ *= 2;
 
 	LOG(DEBUG) << "nonce = " << nonce_
@@ -255,7 +253,7 @@ void Bot::prepare_transaction(TW::Ethereum::ABI::Function* func)
 
 void Bot::schedule_for_10x1min()
 {
-	auto start = boost::posix_time::from_time_t(config_["start_time"].asInt64());
+	auto start = boost::posix_time::from_time_t(config_["start_time"]);
 	start += delta_msec_;
 
 	if (start < boost::posix_time::second_clock::universal_time())
@@ -269,7 +267,7 @@ void Bot::schedule_for_10x1min()
 void Bot::schedule_for_compound_time()
 {
 	auto response = eth_call(wallet_hex_, contract_hex_, TW::hex(nearestCompoundingTime_func_->getSignature()));
-	auto next = hexToUInt256(response["result"].asString());
+	auto next = hexToUInt256(response["result"]);
 	LOG(DEBUG) << "next = " << next;
 
 	if (nearest_compounding_time_ != next) {

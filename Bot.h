@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include <jsoncpp/json/json.h>
+#include <nlohmann/json.hpp>
 #include <boost/asio.hpp>
 
 #include <uint256.h>
@@ -20,15 +20,15 @@ namespace TW {
 class Bot
 {
 public:
-	Bot(Json::Value& config, boost::asio::io_service& io);
+	Bot(nlohmann::json& config, boost::asio::io_service& io);
 	~Bot();
 
 	void init();
 	void start();
 
-	static std::string pretty_print(const Json::Value& val, bool indent = false);
-	static Json::Value parse_json(const std::string& str_result);
-	static Json::Value make_json_rpc(const std::string& method);
+	static std::string pretty_print(const nlohmann::json& val, bool indent = false);
+	static nlohmann::json parse_json(const std::string& str_result);
+	static nlohmann::json make_json_rpc(const std::string& method);
 	static TW::uint256_t hexToUInt256(std::string s);
 
 	void timer_cb(const boost::system::error_code& /*e*/);
@@ -41,14 +41,14 @@ private:
 	void check_config(const std::string& tag, int& output);
 
 	void prepare_transaction(TW::Ethereum::ABI::Function* func);
-	Json::Value rest_request(Json::Value doc);
+	nlohmann::json rest_request(nlohmann::json doc);
 
-	Json::Value eth_getTransactionCount(const std::string& address);
-	Json::Value eth_gasPrice();
-	Json::Value eth_estimateGas();
-	Json::Value eth_getBalance(const std::string& address);
-	Json::Value eth_call(const std::string& from, const std::string& to, const std::string& data);
-	Json::Value eth_sendRawTransaction(const std::string& data);
+	nlohmann::json eth_getTransactionCount(const std::string& address);
+	nlohmann::json eth_gasPrice();
+	nlohmann::json eth_estimateGas();
+	nlohmann::json eth_getBalance(const std::string& address);
+	nlohmann::json eth_call(const std::string& from, const std::string& to, const std::string& data);
+	nlohmann::json eth_sendRawTransaction(const std::string& data);
 
 	void schedule_for_10x1min();
 	void schedule_for_compound_time();
@@ -57,7 +57,7 @@ private:
 
 	BinaCPP* rest_;
 
-	Json::Value config_;
+	nlohmann::json config_;
 
 	std::string mode_;
 	std::string url_;
