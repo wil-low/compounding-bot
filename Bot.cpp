@@ -233,10 +233,10 @@ void Bot::prepare_transaction(TW::Ethereum::ABI::Function* func)
 
 	auto response = eth_gasPrice();
 	gas_price_ = hexToUInt256(response["result"].asString());
+	gas_price_ *= 10;
 
 	response = eth_estimateGas();
 	gas_limit_ = hexToUInt256(response["result"].asString());
-
 	gas_limit_ *= 2;
 
 	LOG(DEBUG) << "nonce = " << nonce_
