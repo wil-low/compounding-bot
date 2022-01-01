@@ -21,7 +21,7 @@ const std::vector<std::string> Bot::headers_ {
 	"Content-Type: application/json"
 };
 
-Bot::Bot(nlohmann::json& config, boost::asio::io_service& io)
+Bot::Bot(nlohmann::json& config, asio::io_service& io)
 : config_(config)
 , rest_(nullptr)
 , nonce_(0)
@@ -289,7 +289,7 @@ void Bot::log_schedule()
 	LOG(DEBUG) << "timer_cb scheduled for " << mode_ << " at " << to_simple_string(main_timer_.expires_at()) << " UTC";
 }
 
-void Bot::timer_cb(const boost::system::error_code& /*e*/)
+void Bot::timer_cb(const std::error_code& /*e*/)
 {
 	if (mode_ == MODE_approve10x1min) {
 		static int counter = 10;
@@ -335,7 +335,7 @@ void Bot::timer_cb(const boost::system::error_code& /*e*/)
 	}
 }
 
-void Bot::cooldown_cb(const boost::system::error_code& /*e*/)
+void Bot::cooldown_cb(const std::error_code& /*e*/)
 {
 	if (mode_ == MODE_compound) {
 		LOG(DEBUG) << "cooldown_cb compound";

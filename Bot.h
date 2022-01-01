@@ -2,7 +2,7 @@
 
 #include <string>
 #include <nlohmann/json.hpp>
-#include <boost/asio.hpp>
+#include <asio.hpp>
 
 #include <uint256.h>
 
@@ -20,7 +20,7 @@ namespace TW {
 class Bot
 {
 public:
-	Bot(nlohmann::json& config, boost::asio::io_service& io);
+	Bot(nlohmann::json& config, asio::io_service& io);
 	~Bot();
 
 	void init();
@@ -31,8 +31,8 @@ public:
 	static nlohmann::json make_json_rpc(const std::string& method);
 	static TW::uint256_t hexToUInt256(std::string s);
 
-	void timer_cb(const boost::system::error_code& /*e*/);
-	void cooldown_cb(const boost::system::error_code& /*e*/);  // after bounty
+	void timer_cb(const std::error_code& /*e*/);
+	void cooldown_cb(const std::error_code& /*e*/);  // after bounty
 
 private:
 	static const std::vector<std::string> headers_;
@@ -84,6 +84,6 @@ private:
 	TW::Ethereum::ABI::Function *compound_func_;
 	TW::Ethereum::ABI::Function *nearestCompoundingTime_func_;
 
-	boost::asio::deadline_timer main_timer_;
+	asio::deadline_timer main_timer_;
 	boost::posix_time::milliseconds delta_msec_;
 };
