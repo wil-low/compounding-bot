@@ -64,6 +64,16 @@ void Bot::check_config(const std::string& tag, int& output)
 		throw std::invalid_argument("check_config: int tag '" + tag + "' not found");
 }
 
+void Bot::check_config(const std::string& tag, TW::uint256_t& output)
+{
+	if (config_[tag].is_number()) {
+		uint64_t num = config_[tag];
+		output = num;
+	}
+	else
+		throw std::invalid_argument("check_config: uint256 tag '" + tag + "' not found");
+}
+
 void Bot::init()
 {
 	int id, start_time, delta;
@@ -77,6 +87,8 @@ void Bot::init()
 	check_config("contract", contract_hex_);
 	check_config("wallet", wallet_hex_);
 	check_config("secret", secret);
+	check_config("gas_limit", gas_limit_);
+	check_config("gas_price", gas_price_);
 	check_config("start_time", start_time);
 	check_config("delta_msec", delta);
 
@@ -100,8 +112,6 @@ void Bot::init()
 
 	auto response = eth_getTransactionCount(wallet_hex_);
 	nonce_ = hexToUInt256(response["result"]);
-
-	LOG(DEBUG) << "nonce = " << nonce_;
 }
 
 std::string Bot::pretty_print(const nlohmann::json& val, bool indent)
@@ -227,15 +237,13 @@ nlohmann::json Bot::eth_sendRawTransaction(const std::string& data)
 
 void Bot::prepare_transaction(TW::Ethereum::ABI::Function* func)
 {
-	auto sig = TW::hex(func->getSignature());
-
-	auto response = eth_gasPrice();
+	/*auto response = eth_gasPrice();
 	gas_price_ = hexToUInt256(response["result"]);
 	gas_price_ *= 10;
 
 	response = eth_estimateGas();
 	gas_limit_ = hexToUInt256(response["result"]);
-	gas_limit_ *= 2;
+	gas_limit_ *= 2;*/
 
 	LOG(DEBUG) << "nonce = " << nonce_
 				<< ", gas_price = " << gas_price_

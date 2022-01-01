@@ -5,6 +5,8 @@
 	"url": "https://bsc-dataseed.binance.org/",
 	"chain_id": 56,
 	"contract": "c1742a30b7469f49f37239b1c2905876821700e8",
+	"gas_limit": 2000000,
+	"gas_price": 50000000000,
 	"start_time": 1640952060,
-	"delta_msec": -60
+	"delta_msec": -110
 }

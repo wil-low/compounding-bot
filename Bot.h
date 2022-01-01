@@ -39,6 +39,7 @@ private:
 
 	void check_config(const std::string& tag, std::string& output);
 	void check_config(const std::string& tag, int& output);
+	void check_config(const std::string& tag, TW::uint256_t& output);
 
 	void prepare_transaction(TW::Ethereum::ABI::Function* func);
 	nlohmann::json rest_request(nlohmann::json doc);
