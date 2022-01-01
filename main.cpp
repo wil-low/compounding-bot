@@ -8,7 +8,7 @@
 
 #include <iostream>
 #include <string>
-#include <asio.hpp>
+#include <boost/asio.hpp>
 
 #include <openssl/crypto.h>
 
@@ -17,7 +17,7 @@ INITIALIZE_EASYLOGGINGPP
 const TWCoinType coin_type = TWCoinType::TWCoinTypeEthereum;
 const int PASSWORD_LEN = 100;
 
-asio::io_service io;
+boost::asio::io_service io;
 
 nlohmann::json load_config(const std::string& fn)
 {
