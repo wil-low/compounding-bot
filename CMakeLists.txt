@@ -30,6 +30,12 @@ include_directories (${CMAKE_SOURCE_DIR} ${WALLET_CORE}/include ${WALLET_CORE}/s
 include_directories (${EASYLOGGING}/src)
 link_directories (${WALLET_CORE}/build ${WALLET_CORE}/build/trezor-crypto ${WALLET_CORE}/build/local/lib)
 
+if (APPLE)
+    set(HOMEBREW "/usr/local/opt")
+    include_directories (${HOMEBREW}/boost/include ${HOMEBREW}/openssl@3/include)
+    link_directories (${HOMEBREW}/boost/lib ${HOMEBREW}/openssl@3/lib)
+endif()
+
 find_library(WALLET_CORE_LIB_FILE TrustWalletCore PATH ${WALLET_CORE}/build)
 if (NOT WALLET_CORE_LIB_FILE)
     message (FATAL_ERROR "TrustWalletCore library not found.  ${SETUP_MESSAGE}")
