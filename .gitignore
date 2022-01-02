@@ -30,8 +30,6 @@
 *.exe
 *.out
 *.app
-compounding-bot
-bot.keystore
 
 .cmake
 CMakeLists.txt.user
@@ -46,4 +44,8 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 
+# Project specific
 *.log
+compounding-bot
+bot.keystore
+*.icloud
