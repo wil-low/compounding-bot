@@ -10,12 +10,12 @@ endif()
 set (SETUP_MESSAGE "Please provide TrustWalletCore build directory with -DWALLET_CORE.   Example: cmake . -DWALLET_CORE=../wallet-core")
 
 if (NOT WALLET_CORE)
-    set (WALLET_CORE "../wallet-core")
+    set (WALLET_CORE "${CMAKE_SOURCE_DIR}/../wallet-core")
     #message (FATAL_ERROR "${SETUP_MESSAGE}")
+    message("${WALLET_CORE}")
 endif ()
 
-set (EASYLOGGING "../easyloggingpp")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DELPP_NO_DEFAULT_LOG_FILE")
+set (EASYLOGGING "${CMAKE_SOURCE_DIR}/../easyloggingpp")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -34,8 +34,8 @@ link_directories (${WALLET_CORE}/build ${WALLET_CORE}/build/trezor-crypto ${WALL
 
 if (APPLE)
     set(HOMEBREW "/usr/local/opt")
-    include_directories (${HOMEBREW}/boost/include ${HOMEBREW}/openssl@3/include)
-    link_directories (${HOMEBREW}/boost/lib ${HOMEBREW}/openssl@3/lib)
+    include_directories (${HOMEBREW}/boost/include ${HOMEBREW}/openssl/include)
+    link_directories (${HOMEBREW}/boost/lib ${HOMEBREW}/openssl/lib)
 endif()
 
 find_library(WALLET_CORE_LIB_FILE TrustWalletCore PATH ${WALLET_CORE}/build)
