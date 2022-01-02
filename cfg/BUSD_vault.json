@@ -1,6 +1,6 @@
 {
 	"id": 2,
-	"name": "Position Exchange BUSD vault",
+	"name": "POSI-BUSD",
 	"mode": "compound",
 	"url": "https://bsc-dataseed.binance.org/",
 	"chain_id": 56,

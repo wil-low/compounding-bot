@@ -30,12 +30,17 @@ public:
 	static nlohmann::json parse_json(const std::string& str_result);
 	static nlohmann::json make_json_rpc(const std::string& method);
 	static TW::uint256_t hexToUInt256(std::string s);
+	static std::string UInt256ToHex(const TW::uint256_t& val);
 
 	void timer_cb(const boost::system::error_code& /*e*/);
 	void cooldown_cb(const boost::system::error_code& /*e*/);  // after bounty
 
 private:
 	static const std::vector<std::string> headers_;
+
+	static double tx_fee(const TW::uint256_t& gas_used, const TW::uint256_t& gas_price);
+
+	void gather_tx(const std::string& my_tx_hash);
 
 	void check_config(const std::string& tag, std::string& output);
 	void check_config(const std::string& tag, int& output);
@@ -47,9 +52,13 @@ private:
 	nlohmann::json eth_getTransactionCount(const std::string& address);
 	nlohmann::json eth_gasPrice();
 	nlohmann::json eth_estimateGas();
-	nlohmann::json eth_getBalance(const std::string& address);
 	nlohmann::json eth_call(const std::string& from, const std::string& to, const std::string& data);
 	nlohmann::json eth_sendRawTransaction(const std::string& data);
+
+	TW::uint256_t eth_getBalance();
+	nlohmann::json eth_getTransactionByHash(const std::string& tx_hash);
+	nlohmann::json eth_getTransactionReceipt(const std::string& tx_hash);
+	nlohmann::json eth_getBlockByNumber(const TW::uint256_t& number, bool full_tx_data);
 
 	void schedule_for_10x1min();
 	void schedule_for_compound_time();

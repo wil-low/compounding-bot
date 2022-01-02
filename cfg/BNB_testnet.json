@@ -1,6 +1,6 @@
 {
 	"id": 0,
-	"name": "BNB token contract - testnet (Compromised)",
+	"name": "BNB-testnet",
 	"mode": "approve10x1min",
 	"url": "https://data-seed-prebsc-1-s1.binance.org:8545/",
 	"chain_id": 97,

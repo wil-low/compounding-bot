@@ -1,6 +1,6 @@
 {
 	"id": 1,
-	"name": "Position Exchange BNB vault",
+	"name": "POSI-BNB",
 	"mode": "compound",
 	"url": "https://bsc-dataseed.binance.org/",
 	"chain_id": 56,
