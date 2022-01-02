@@ -29,6 +29,7 @@ set (CMAKE_C_STANDARD_REQUIRED ON)
 # ${WALLET_CORE}/build/local/include) -- for protobuf includes
 include_directories (${CMAKE_SOURCE_DIR} ${WALLET_CORE}/include ${WALLET_CORE}/src ${WALLET_CORE}/build/local/include)
 include_directories (${EASYLOGGING}/src)
+include_directories (/usr/include/mysql)
 link_directories (${WALLET_CORE}/build ${WALLET_CORE}/build/trezor-crypto ${WALLET_CORE}/build/local/lib)
 
 if (APPLE)
@@ -103,9 +104,10 @@ endif()
 add_executable (compounding-bot 
 	main.cpp
 	Bot.cpp
+	DB.cpp
 	binacpp/binacpp.cpp
 	${EASYLOGGING}/src/easylogging++.cc
 )
 
 # link with our library, and default platform libraries
-target_link_libraries (compounding-bot TrustWalletCore TrezorCrypto protobuf curl crypto boost_date_time pthread ${PLATFORM_LIBS})
+target_link_libraries (compounding-bot TrustWalletCore TrezorCrypto protobuf curl crypto boost_date_time mysqlclient pthread ${PLATFORM_LIBS})

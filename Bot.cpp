@@ -1,5 +1,6 @@
 #include "Bot.h"
 #include "Transaction.h"
+#include "DB.h"
 #include "binacpp/binacpp.h"
 
 #include <HexCoding.h>
@@ -22,9 +23,10 @@ const std::vector<std::string> Bot::headers_ {
 	"Content-Type: application/json"
 };
 
-Bot::Bot(nlohmann::json& config, boost::asio::io_service& io)
+Bot::Bot(nlohmann::json& config, boost::asio::io_service& io, DB* db)
 : config_(config)
 , rest_(nullptr)
+, db_(db)
 , nonce_(0)
 , gas_price_(0)
 , gas_limit_(0)
@@ -320,8 +322,8 @@ void Bot::schedule_for_compound_time()
 		main_timer_.async_wait(std::bind(&Bot::timer_cb, this, std::placeholders::_1));
 	}
 	else {
-		// reschedule for 20 sec after bounty distribution
-		main_timer_.expires_at(boost::posix_time::second_clock::universal_time() + boost::posix_time::seconds(20));
+		// reschedule for 30 sec after bounty distribution
+		main_timer_.expires_at(boost::posix_time::second_clock::universal_time() + boost::posix_time::seconds(30));
 		main_timer_.async_wait(std::bind(&Bot::cooldown_cb, this, std::placeholders::_1));
 	}
 	log_schedule();
@@ -404,7 +406,7 @@ void Bot::gather_tx(const std::string& my_tx_hash)
 	TW::uint256_t timestamp = 0;
 
 	std::vector<Transaction> transactions;
-	for (auto i = 0; i < 3; ++i) {
+	for (auto i = 0; i < 5; ++i) {
 		auto block = eth_getBlockByNumber(my_block_number - 2 + i, true);
 		if (timestamp == 0)
 			timestamp = hexToUInt256(block["result"]["timestamp"]);
@@ -426,8 +428,6 @@ void Bot::gather_tx(const std::string& my_tx_hash)
 				t.gas_limit_ = hexToUInt256(tr["gas"]);
 				t.gas_price_ = hexToUInt256(tr["gasPrice"]);
 				transactions.push_back(t);
-				if (t.hash_ == my_tx_hash)
-					break;
 			}
 		}
 		//LOG(DEBUG) << pretty_print(block, true);
@@ -440,15 +440,20 @@ void Bot::gather_tx(const std::string& my_tx_hash)
 		t.status_ = (int)hexToUInt256(tr["result"]["status"]);
 		t.log_count_ = tr["result"]["logs"].size();
 		t.index_ = counter++;
+		t.tx_fee_ = tx_fee(t.gas_used_, t.gas_price_);
 		t.timestamp_ = timestamp;
-		LOG(DEBUG) << timestamp << ";" << t.index_ << ";" << t.from_ << ";" << tx_fee(t.gas_used_, t.gas_price_) << ";" << t.log_count_ << ";"
+		t.bot_id_ = config_["id"];
+		t.delta_msec_ = t.hash_ == my_tx_hash ? (int)config_["delta_msec"] : 0;
+		LOG(DEBUG) << timestamp << ";" << t.index_ << ";" << t.from_ << ";" << t.tx_fee_ << ";" << t.log_count_ << ";"
 			<< t.gas_limit_ << ";" << t.status_ << ";" << t.hash_ << ";" << t.block_number_ << ";" << t.gas_limit_ << ";" << t.gas_price_;
+		db_->store_tx(t);
 	}
 }
 
 void Bot::start()
 {
 	//gather_tx("0x8780ad646fb561784bd1e85a17b738d466099ac0da7c940b7855648c469c92e7");
+	//return;
 	main_timer_.cancel();
 
 	if (mode_ == MODE_approve10x1min) {

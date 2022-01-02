@@ -1,4 +1,5 @@
 #include "Bot.h"
+#include "DB.h"
 
 #include <HexCoding.h>
 #include <Coin.h>
@@ -75,7 +76,10 @@ int main(int argc, char* argv[])
 				//LOG(INFO) << cfg["wallet"].asString();
 			}
 
-			Bot bot(cfg, io);
+			DB db;
+			db.connect("192.168.1.6", "bot", "bot2022", "bot_db");
+
+			Bot bot(cfg, io, &db);
 
 			bot.init();
 			bot.start();

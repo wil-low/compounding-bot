@@ -17,5 +17,7 @@ struct Transaction
 	TW::uint256_t gas_price_;
 	TW::uint256_t gas_used_;
 	int status_;
+	int bot_id_;
+	int delta_msec_;
 };
  

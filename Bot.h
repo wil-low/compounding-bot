@@ -7,6 +7,7 @@
 #include <uint256.h>
 
 class BinaCPP;
+class DB;
 
 namespace TW {
 	class PrivateKey;
@@ -20,7 +21,7 @@ namespace TW {
 class Bot
 {
 public:
-	Bot(nlohmann::json& config, boost::asio::io_service& io);
+	Bot(nlohmann::json& config, boost::asio::io_service& io, DB* db);
 	~Bot();
 
 	void init();
@@ -66,6 +67,7 @@ private:
 	void log_schedule();
 
 	BinaCPP* rest_;
+	DB* db_;
 
 	nlohmann::json config_;
 
