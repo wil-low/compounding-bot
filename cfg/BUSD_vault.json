@@ -8,5 +8,13 @@
 	"gas_limit": 2000000,
 	"gas_price": 50000000000,
 	"start_time": 1640952060,
-	"delta_msec": -100
+	"delta_msec": -100,
+	"keystore": "bot.keystore",
+	"keystore_pass": "",
+	"database": {
+		"host": "192.168.1.6",
+		"user": "bot",
+		"pass": "",
+		"db": "bot_db"
+	}
 }

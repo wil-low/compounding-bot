@@ -13,6 +13,22 @@ CREATE TABLE `transaction` (
   `status` int NOT NULL,
   `bot_id` int NOT NULL,
   `delta_msec` int NOT NULL,
+  `comment` varchar(100) NOT NULL,
   PRIMARY KEY (`timestamp`,`index`)
 );
 
+CREATE VIEW `v_tx` AS
+    SELECT 
+        `transaction`.`timestamp` AS `timestamp`,
+        `transaction`.`index` AS `index`,
+        `transaction`.`from` AS `from`,
+        `transaction`.`log_count` AS `log_count`,
+        `transaction`.`tx_fee` AS `tx_fee`,
+        `transaction`.`gas_price` AS `gas_price`,
+        `transaction`.`block_number` AS `block_number`,
+        `transaction`.`delta_msec` AS `delta_msec`,
+        `transaction`.`bot_id` AS `bot_id`,
+        `transaction`.`hash` AS `hash`,
+		`transaction`.`comment` AS `comment`
+    FROM
+        `transaction`;

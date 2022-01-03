@@ -452,7 +452,7 @@ void Bot::gather_tx(const std::string& my_tx_hash)
 
 void Bot::start()
 {
-	//gather_tx("0x8780ad646fb561784bd1e85a17b738d466099ac0da7c940b7855648c469c92e7");
+	//gather_tx("0x6a26e3c4604dd49964428a1337ead957e0c35c1115aeb4cc2676450d0c586c99");
 	//return;
 	main_timer_.cancel();
 

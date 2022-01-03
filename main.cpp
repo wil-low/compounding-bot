@@ -67,8 +67,12 @@ int main(int argc, char* argv[])
 
 			bool keys_present = cfg["secret"].is_string() && !cfg["secret"].empty() && cfg["wallet"].is_string() && !cfg["wallet"].empty();
 			if (!keys_present) {
-				auto password = getpass("Enter password for keystore: ");
-				auto privateKey = load_wallet("bot.keystore", password);
+				std::string password;
+				if (cfg["keystore_pass"].is_string() && !std::string(cfg["keystore_pass"]).empty())
+					password = cfg["keystore_pass"];
+				else
+					password = getpass("Enter password for keystore: ");
+				auto privateKey = load_wallet(cfg["keystore"], password.c_str());
 
 				cfg["secret"] = TW::hex(privateKey.bytes);
 				cfg["wallet"] = TW::deriveAddress(coin_type, privateKey).substr(2);
@@ -77,7 +81,7 @@ int main(int argc, char* argv[])
 			}
 
 			DB db;
-			db.connect("192.168.1.6", "bot", "bot2022", "bot_db");
+			db.connect(cfg["database"]["host"], cfg["database"]["user"], cfg["database"]["pass"], cfg["database"]["db"]);
 
 			Bot bot(cfg, io, &db);
 
