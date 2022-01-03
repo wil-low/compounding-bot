@@ -1,5 +1,6 @@
 #include "Bot.h"
 #include "DB.h"
+#include "version.h"
 
 #include <HexCoding.h>
 #include <Coin.h>
@@ -30,7 +31,7 @@ nlohmann::json load_config(const std::string& fn)
 	std::stringstream buffer;
 	buffer << in.rdbuf();
 	in.close();
-	LOG(DEBUG) << "Contents of " << fn << ": " << buffer.str();
+	//LOG(DEBUG) << "Contents of " << fn << ": " << buffer.str();
 	return Bot::parse_json(buffer.str());
 }
 
@@ -60,19 +61,27 @@ int main(int argc, char* argv[])
 
 	try {
 		LOG(INFO) << "=======================";
-		LOG(INFO) << "compounding-bot started";
+		LOG(INFO) << "compounding-bot version " << VERSION << " started";
 
 		if (argc > 1) {
 			nlohmann::json cfg = load_config(argv[1]);
 
+			std::string keystore_pass;
+			if (cfg["keystore_pass"].is_string() && !std::string(cfg["keystore_pass"]).empty())
+				keystore_pass = cfg["keystore_pass"];
+
+			std::string database_pass = cfg["database"]["pass"];
+
+			cfg["database"]["pass"] = "";
+			cfg["keystore_pass"] = "";
+
+			LOG(DEBUG) << "Contents of " << argv[1] << ": " << Bot::pretty_print(cfg, true);
+
 			bool keys_present = cfg["secret"].is_string() && !cfg["secret"].empty() && cfg["wallet"].is_string() && !cfg["wallet"].empty();
 			if (!keys_present) {
-				std::string password;
-				if (cfg["keystore_pass"].is_string() && !std::string(cfg["keystore_pass"]).empty())
-					password = cfg["keystore_pass"];
-				else
-					password = getpass("Enter password for keystore: ");
-				auto privateKey = load_wallet(cfg["keystore"], password.c_str());
+				if (keystore_pass.empty())
+					keystore_pass = getpass("Enter password for keystore: ");
+				auto privateKey = load_wallet(cfg["keystore"], keystore_pass.c_str());
 
 				cfg["secret"] = TW::hex(privateKey.bytes);
 				cfg["wallet"] = TW::deriveAddress(coin_type, privateKey).substr(2);
@@ -81,7 +90,7 @@ int main(int argc, char* argv[])
 			}
 
 			DB db;
-			db.connect(cfg["database"]["host"], cfg["database"]["user"], cfg["database"]["pass"], cfg["database"]["db"]);
+			db.connect(cfg["database"]["host"], cfg["database"]["user"], database_pass, cfg["database"]["db"]);
 
 			Bot bot(cfg, io, &db);
 
