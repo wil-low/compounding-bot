@@ -33,6 +33,7 @@ Bot::Bot(nlohmann::json& config, boost::asio::io_service& io, DB* db)
 , nearest_compounding_time_(0)
 , private_key_(nullptr)
 , main_timer_(io)
+, gather_tx_timer_(io)
 , delta_msec_(0)
 , approve_func_(nullptr)
 , compound_func_(nullptr)
@@ -157,16 +158,18 @@ std::string Bot::UInt256ToHex(const TW::uint256_t& val)
 	return TW::hexEncoded(data);
 }
 
-nlohmann::json Bot::rest_request(nlohmann::json doc)
+nlohmann::json Bot::rest_request(nlohmann::json doc, bool logged)
 {
 	std::string request = pretty_print(doc);
 
-	//LOG(DEBUG) << "Request: " << request;
+	if (logged)
+		LOG(DEBUG) << "Request: " << request;
 
 	std::string str_result;
 	rest_->curl_api_with_header(url_, str_result, headers_, request, "POST");
 
-	//LOG(DEBUG) << "Response: " << str_result;
+	if (logged)
+		LOG(DEBUG) << "Response: " << str_result;
 
 	return parse_json(str_result);
 }
@@ -220,7 +223,7 @@ TW::uint256_t Bot::eth_getBalance()
 	return 0;
 }
 
-nlohmann::json Bot::eth_getTransactionReceipt(const std::string& tx_hash)
+nlohmann::json Bot::eth_getTransactionReceipt(const std::string& tx_hash, bool logged)
 {
 	auto doc = make_json_rpc("eth_getTransactionReceipt");
 
@@ -228,10 +231,10 @@ nlohmann::json Bot::eth_getTransactionReceipt(const std::string& tx_hash)
 	arr.push_back(tx_hash);
 	doc["params"] = arr;
 
-	return rest_request(doc);
+	return rest_request(doc, logged);
 }
 
-nlohmann::json Bot::eth_getTransactionByHash(const std::string& tx_hash)
+nlohmann::json Bot::eth_getTransactionByHash(const std::string& tx_hash, bool logged)
 {
 	auto doc = make_json_rpc("eth_getTransactionByHash");
 
@@ -239,10 +242,10 @@ nlohmann::json Bot::eth_getTransactionByHash(const std::string& tx_hash)
 	arr.push_back(tx_hash);
 	doc["params"] = arr;
 
-	return rest_request(doc);
+	return rest_request(doc, logged);
 }
 
-nlohmann::json Bot::eth_getBlockByNumber(const TW::uint256_t& number, bool full_tx_data)
+nlohmann::json Bot::eth_getBlockByNumber(const TW::uint256_t& number, bool full_tx_data, bool logged)
 {
 	auto doc = make_json_rpc("eth_getBlockByNumber");
 
@@ -251,7 +254,7 @@ nlohmann::json Bot::eth_getBlockByNumber(const TW::uint256_t& number, bool full_
 	arr.push_back(full_tx_data);
 	doc["params"] = arr;
 
-	return rest_request(doc);
+	return rest_request(doc, logged);
 }
 
 nlohmann::json Bot::eth_call(const std::string& from, const std::string& to, const std::string& data)
@@ -373,6 +376,12 @@ void Bot::timer_cb(const boost::system::error_code& /*e*/)
 	else if (mode_ == MODE_compound) {
 		LOG(DEBUG) << "timer_cb compound start";
 		auto response = eth_sendRawTransaction(prepared_tx_);
+		if (response["result"].is_string()) {
+			std::string my_tx_hash = response["result"];
+			gather_tx_timer_.expires_at(boost::posix_time::second_clock::universal_time() + boost::posix_time::seconds(30));
+			gather_tx_timer_.async_wait(std::bind(&Bot::gather_tx_cb, this, my_tx_hash, std::placeholders::_1));
+		}
+
 		LOG(DEBUG) << "timer_cb compound end";
 
 		prepare_transaction(compound_func_);
@@ -388,6 +397,14 @@ void Bot::cooldown_cb(const boost::system::error_code& /*e*/)
 	}
 }
 
+void Bot::gather_tx_cb(const std::string& my_tx_hash, const boost::system::error_code& /*e*/)
+{
+	if (mode_ == MODE_compound) {
+		LOG(DEBUG) << "gather_tx_cb compound";
+		gather_tx(my_tx_hash);
+	}
+}
+
 double Bot::tx_fee(const TW::uint256_t& gas_used, const TW::uint256_t& gas_price)
 {
 	return double(gas_used * gas_price) / pow(10, 18);
@@ -395,7 +412,8 @@ double Bot::tx_fee(const TW::uint256_t& gas_used, const TW::uint256_t& gas_price
 
 void Bot::gather_tx(const std::string& my_tx_hash)
 {
-	auto my_tx = eth_getTransactionByHash(my_tx_hash);
+	bool logged = false;
+	auto my_tx = eth_getTransactionByHash(my_tx_hash, logged);
 	const auto my_block_number = hexToUInt256(my_tx["result"]["blockNumber"]);
 	const auto contr = my_tx["result"]["to"];
 
@@ -407,7 +425,7 @@ void Bot::gather_tx(const std::string& my_tx_hash)
 
 	std::vector<Transaction> transactions;
 	for (auto i = 0; i < 5; ++i) {
-		auto block = eth_getBlockByNumber(my_block_number - 2 + i, true);
+		auto block = eth_getBlockByNumber(my_block_number - 2 + i, true, logged);
 		if (timestamp == 0)
 			timestamp = hexToUInt256(block["result"]["timestamp"]);
 		//LOG(DEBUG) << pretty_print(block, true);
@@ -434,7 +452,7 @@ void Bot::gather_tx(const std::string& my_tx_hash)
 	}
 	auto counter = 0;
 	for (auto& t : transactions) {
-		auto tr = eth_getTransactionReceipt(t.hash_);
+		auto tr = eth_getTransactionReceipt(t.hash_, logged);
 		//LOG(DEBUG) << "TX # " << counter << ":\n" << pretty_print(tr, true);
 		t.gas_used_ = hexToUInt256(tr["result"]["gasUsed"]);
 		t.status_ = (int)hexToUInt256(tr["result"]["status"]);
@@ -446,7 +464,7 @@ void Bot::gather_tx(const std::string& my_tx_hash)
 		t.delta_msec_ = t.hash_ == my_tx_hash ? (int)config_["delta_msec"] : 0;
 		LOG(DEBUG) << timestamp << ";" << t.index_ << ";" << t.from_ << ";" << t.tx_fee_ << ";" << t.log_count_ << ";"
 			<< t.gas_limit_ << ";" << t.status_ << ";" << t.hash_ << ";" << t.block_number_ << ";" << t.gas_limit_ << ";" << t.gas_price_;
-		db_->store_tx(t);
+		//db_->store_tx(t);
 	}
 }
 

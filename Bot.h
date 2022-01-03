@@ -35,6 +35,7 @@ public:
 
 	void timer_cb(const boost::system::error_code& /*e*/);
 	void cooldown_cb(const boost::system::error_code& /*e*/);  // after bounty
+	void gather_tx_cb(const std::string& my_tx_hash, const boost::system::error_code& /*e*/);  // after bounty
 
 private:
 	static const std::vector<std::string> headers_;
@@ -48,7 +49,7 @@ private:
 	void check_config(const std::string& tag, TW::uint256_t& output);
 
 	void prepare_transaction(TW::Ethereum::ABI::Function* func);
-	nlohmann::json rest_request(nlohmann::json doc);
+	nlohmann::json rest_request(nlohmann::json doc, bool logged = true);
 
 	nlohmann::json eth_getTransactionCount(const std::string& address);
 	nlohmann::json eth_gasPrice();
@@ -57,9 +58,9 @@ private:
 	nlohmann::json eth_sendRawTransaction(const std::string& data);
 
 	TW::uint256_t eth_getBalance();
-	nlohmann::json eth_getTransactionByHash(const std::string& tx_hash);
-	nlohmann::json eth_getTransactionReceipt(const std::string& tx_hash);
-	nlohmann::json eth_getBlockByNumber(const TW::uint256_t& number, bool full_tx_data);
+	nlohmann::json eth_getTransactionByHash(const std::string& tx_hash, bool logged);
+	nlohmann::json eth_getTransactionReceipt(const std::string& tx_hash, bool logged);
+	nlohmann::json eth_getBlockByNumber(const TW::uint256_t& number, bool full_tx_data, bool logged);
 
 	void schedule_for_10x1min();
 	void schedule_for_compound_time();
@@ -97,5 +98,6 @@ private:
 	TW::Ethereum::ABI::Function *nearestCompoundingTime_func_;
 
 	boost::asio::deadline_timer main_timer_;
+	boost::asio::deadline_timer gather_tx_timer_;
 	boost::posix_time::milliseconds delta_msec_;
 };
