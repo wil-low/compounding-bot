@@ -464,7 +464,7 @@ void Bot::gather_tx(const std::string& my_tx_hash)
 		t.delta_msec_ = t.hash_ == my_tx_hash ? (int)config_["delta_msec"] : 0;
 		LOG(DEBUG) << timestamp << ";" << t.index_ << ";" << t.from_ << ";" << t.tx_fee_ << ";" << t.log_count_ << ";"
 			<< t.gas_limit_ << ";" << t.status_ << ";" << t.hash_ << ";" << t.block_number_ << ";" << t.gas_limit_ << ";" << t.gas_price_;
-		//db_->store_tx(t);
+		db_->store_tx(t);
 	}
 }
 
