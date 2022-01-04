@@ -19,6 +19,8 @@ const char MODE_approve10x1min[] = "approve10x1min";
 const char MODE_compound10x1min[] = "compound10x1min";
 const char MODE_compound[] = "compound";
 
+const int GATHER_TX_TIMEOUT = 3 * 60;
+
 const std::vector<std::string> Bot::headers_ {
 	"Content-Type: application/json"
 };
@@ -378,7 +380,7 @@ void Bot::timer_cb(const boost::system::error_code& /*e*/)
 		auto response = eth_sendRawTransaction(prepared_tx_);
 		if (response["result"].is_string()) {
 			std::string my_tx_hash = response["result"];
-			gather_tx_timer_.expires_at(boost::posix_time::second_clock::universal_time() + boost::posix_time::seconds(30));
+			gather_tx_timer_.expires_at(boost::posix_time::second_clock::universal_time() + boost::posix_time::seconds(GATHER_TX_TIMEOUT));
 			gather_tx_timer_.async_wait(std::bind(&Bot::gather_tx_cb, this, my_tx_hash, std::placeholders::_1));
 		}
 
